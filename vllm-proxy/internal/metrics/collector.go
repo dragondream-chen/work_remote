@@ -14,6 +14,9 @@ type MetricsCollector struct {
 	BackendErrors     *prometheus.CounterVec
 	LoadBalanceScore  *prometheus.GaugeVec
 	KVTransferLatency *prometheus.HistogramVec
+	ServerActiveTokens *prometheus.GaugeVec
+	ServerActiveKVCache *prometheus.GaugeVec
+	InstanceHealth    *prometheus.GaugeVec
 }
 
 var (
@@ -119,6 +122,9 @@ func NewMetricsCollector() *MetricsCollector {
 		BackendErrors: BackendErrors,
 		LoadBalanceScore: LoadBalanceScore,
 		KVTransferLatency: KVTransferLatency,
+		ServerActiveTokens: ServerActiveTokens,
+		ServerActiveKVCache: ServerActiveKVCache,
+		InstanceHealth: InstanceHealth,
 	}
 }
 

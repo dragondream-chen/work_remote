@@ -1,4 +1,4 @@
-.PHONY: build run clean test docker-build docker-push
+.PHONY: build run clean test docker-build docker-push vendor-build vendor-deps
 
 BINARY_NAME=vllm-proxy
 VERSION?=1.0.0
@@ -7,6 +7,28 @@ LDFLAGS=-ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME)"
 
 build:
 	go build $(LDFLAGS) -o bin/$(BINARY_NAME) ./cmd
+
+vendor-build:
+	go build -mod=vendor $(LDFLAGS) -o bin/$(BINARY_NAME) ./cmd
+
+vendor-deps:
+	@echo "克隆依赖包到 vendor 目录..."
+	@if [ -f scripts/clone-deps.sh ]; then \
+		chmod +x scripts/clone-deps.sh && \
+		./scripts/clone-deps.sh; \
+	elif [ -f scripts/clone-deps.ps1 ]; then \
+		powershell.exe -ExecutionPolicy Bypass -File scripts/clone-deps.ps1; \
+	else \
+		echo "错误: 找不到依赖克隆脚本"; \
+		exit 1; \
+	fi
+	@echo "生成 modules.txt..."
+	@if [ -f scripts/create-modules-txt.sh ]; then \
+		chmod +x scripts/create-modules-txt.sh && \
+		./scripts/create-modules-txt.sh; \
+	elif [ -f scripts/create-modules-txt.ps1 ]; then \
+		powershell.exe -ExecutionPolicy Bypass -File scripts/create-modules-txt.ps1; \
+	fi
 
 run:
 	go run ./cmd --host 0.0.0.0 --port 8000 \
@@ -55,7 +77,9 @@ deps:
 .PHONY: help
 help:
 	@echo "Available targets:"
-	@echo "  build          - Build the binary"
+	@echo "  build          - Build the binary (requires network)"
+	@echo "  vendor-build   - Build using vendor directory (offline)"
+	@echo "  vendor-deps    - Clone dependencies to vendor directory"
 	@echo "  run            - Run with command line arguments"
 	@echo "  run-config     - Run with config file"
 	@echo "  clean          - Clean build artifacts"
@@ -67,4 +91,4 @@ help:
 	@echo "  docker-build   - Build Docker image"
 	@echo "  docker-push    - Push Docker image"
 	@echo "  benchmark      - Run benchmarks"
-	@echo "  deps           - Download dependencies"
+	@echo "  deps           - Download dependencies (requires network)"
