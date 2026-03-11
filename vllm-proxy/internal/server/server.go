@@ -219,12 +219,13 @@ func (s *ProxyServer) handleCompletionsInternal(api string, c *gin.Context) {
 	}
 	c.Header("Content-Type", contentType)
 
-	s.streamResponse(c, resp, decoderIdx, decoderScore, info, streamFlag, chatFlag, api, reqData)
+	s.streamResponse(c, resp, decoder, decoderIdx, decoderScore, info, streamFlag, chatFlag, api, reqData)
 }
 
 func (s *ProxyServer) streamResponse(
 	c *gin.Context,
 	resp *http.Response,
+	decoder *loadbalancer.ServerState,
 	decoderIdx int,
 	decoderScore float64,
 	info *kvtransfer.RequestInfo,
@@ -264,14 +265,14 @@ func (s *ProxyServer) streamResponse(
 		}
 
 		if lineStr == "[done]" {
-			c.Write([]byte("data: [done]\n\n"))
+			c.Writer.Write([]byte("data: [done]\n\n"))
 			flusher.Flush()
 			break
 		}
 
 		var chunk map[string]interface{}
 		if err := json.Unmarshal([]byte(lineStr), &chunk); err != nil {
-			c.Write(line)
+			c.Writer.Write(line)
 			flusher.Flush()
 			continue
 		}
@@ -279,7 +280,7 @@ func (s *ProxyServer) streamResponse(
 		choices, ok := chunk["choices"].([]interface{})
 		if !ok || len(choices) == 0 {
 			data, _ := json.Marshal(chunk)
-			c.Write([]byte("data: " + string(data) + "\n\n"))
+			c.Writer.Write([]byte("data: " + string(data) + "\n\n"))
 			flusher.Flush()
 			continue
 		}
@@ -287,7 +288,7 @@ func (s *ProxyServer) streamResponse(
 		choice, ok := choices[0].(map[string]interface{})
 		if !ok {
 			data, _ := json.Marshal(chunk)
-			c.Write([]byte("data: " + string(data) + "\n\n"))
+			c.Writer.Write([]byte("data: " + string(data) + "\n\n"))
 			flusher.Flush()
 			continue
 		}
@@ -365,7 +366,7 @@ func (s *ProxyServer) streamResponse(
 		}
 
 		data, _ := json.Marshal(chunk)
-		c.Write([]byte("data: " + string(data) + "\n\n"))
+		c.Writer.Write([]byte("data: " + string(data) + "\n\n"))
 		flusher.Flush()
 	}
 

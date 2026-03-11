@@ -161,7 +161,6 @@ func (p *ServerPool) UpdatePriority(idx int, priority float64) {
 		return
 	}
 
-	server := p.servers[idx]
 	for i, item := range p.heap {
 		if item.Index == idx {
 			p.heap[i].Priority = priority
